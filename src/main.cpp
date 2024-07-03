@@ -19,9 +19,7 @@ fs::path resolvePath(fs::path from, const fs::path& path) {
 }
 
 static std::string canonPath(std::string_view path) {
-    char *p = realpath(path.data(), nullptr);
-    KJ_DEFER(free(p));
-    return std::string(p);
+    return std::string(path);
 }
 
 int main(int argc, char** argv) {
@@ -92,13 +90,13 @@ int main(int argc, char** argv) {
         };
 
         ::capnp::SchemaParser parser;
-        info.schema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(capnpFile), importPaths);
+        info.schema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(capnpFile.c_str())), importPaths);
 
         auto namesp = getNamespace(info.schema);
         if (!namesp.empty()) {
             std::cout << "  found namespace " << namesp << std::endl;
         }
-        info.importNamespaces.emplace(capnpFile, namesp);
+        info.importNamespaces.emplace(capnpFile.string(), namesp);
 
         generateFromSchema(dummy, info.schema, putType);
         auto externalTypes = findExternalTypes(info.schema);
@@ -107,8 +105,8 @@ int main(int argc, char** argv) {
         info.unions = findUnionFields(info.schema);
 
         auto parentPath = capnpFile.parent_path();
-
-        for (auto& [alias, import] : getImportsFromCapnp(capnpFile)) {
+        auto file = capnpFile.string();
+        for (auto& [alias, import] : getImportsFromCapnp(file)) {
             fs::path p = capnpFile.parent_path();
 
             if (import.rfind("/capnp/", 0) == 0) {
@@ -121,7 +119,7 @@ int main(int argc, char** argv) {
 
             try {
                 std::cout << p << std::endl;
-                auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(p), importPaths);
+                auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(p.c_str())), importPaths);
                 auto ns = getNamespace(importSchema);
                 std::cout << "  parsed import " << import;
                 if (!ns.empty()) {

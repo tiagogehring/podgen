@@ -71,15 +71,15 @@ std::unordered_map<::capnp::schema::Type::Which, std::string> capnp_kind_enum {
 };
 
 std::unordered_map<::capnp::schema::Type::Which, uint8_t> pack_sizes {
-    { ::capnp::schema::Type::Which::VOID, sizeof(std::monostate) },
-    { ::capnp::schema::Type::Which::BOOL, sizeof(bool) },
-    { ::capnp::schema::Type::Which::INT8, sizeof(int8_t) },
-    { ::capnp::schema::Type::Which::INT16, sizeof(int16_t) },
-    { ::capnp::schema::Type::Which::INT32, sizeof(int32_t) },
-    { ::capnp::schema::Type::Which::UINT8, sizeof(uint8_t) },
-    { ::capnp::schema::Type::Which::UINT16, sizeof(uint16_t) },
-    { ::capnp::schema::Type::Which::UINT32, sizeof(uint32_t) },
-    { ::capnp::schema::Type::Which::FLOAT32, sizeof(float) }
+    { ::capnp::schema::Type::Which::VOID, static_cast<uint8_t>(sizeof(std::monostate)) },
+    { ::capnp::schema::Type::Which::BOOL, static_cast<uint8_t>(sizeof(bool)) },
+    { ::capnp::schema::Type::Which::INT8, static_cast<uint8_t>(sizeof(int8_t)) },
+    { ::capnp::schema::Type::Which::INT16, static_cast<uint8_t>(sizeof(int16_t)) },
+    { ::capnp::schema::Type::Which::INT32, static_cast<uint8_t>(sizeof(int32_t)) },
+    { ::capnp::schema::Type::Which::UINT8, static_cast<uint8_t>(sizeof(uint8_t)) },
+    { ::capnp::schema::Type::Which::UINT16, static_cast<uint8_t>(sizeof(uint16_t)) },
+    { ::capnp::schema::Type::Which::UINT32, static_cast<uint8_t>(sizeof(uint32_t)) },
+    { ::capnp::schema::Type::Which::FLOAT32, static_cast<uint8_t>(sizeof(float)) }
 };
 
 
@@ -750,7 +750,7 @@ void generateUnion(PodGenStream& gs, ::capnp::StructSchema schema, bool isField)
     }
 
     gs.indent().str("using ").str(name).str(" = std::variant<");
-    for (uint i = 0; i < unionFields.size(); i++) {
+    for (capnp::uint i = 0; i < unionFields.size(); i++) {
         auto uf = unionFields[i];
         if (i > 0) {
             gs << ", ";
@@ -764,7 +764,7 @@ void generateUnion(PodGenStream& gs, ::capnp::StructSchema schema, bool isField)
     which += "_which";
 
     gs.indent().str("enum ").str(which).sp().openBrace();
-    for (uint i = 0; i < unionFields.size(); i++) {
+    for (capnp::uint i = 0; i < unionFields.size(); i++) {
         std::string uname = fname;
         uname += '_';
         uname += unionFields[i].getProto().getName();
@@ -867,7 +867,7 @@ void generateStructFields(PodGenStream& gs, ::capnp::StructSchema schema, const 
 
     bool first = true;
 
-    for (uint i = 0; i < fs.size(); i++) {
+    for (capnp::uint i = 0; i < fs.size(); i++) {
         if (ignore(fs[i])) continue;
 
         auto n = fs[i].getProto().getName().cStr();
@@ -976,7 +976,7 @@ void generateDefaultValue(PodGenStream& gs, ::capnp::Type type, ::capnp::schema:
             auto data = value.getData();
             if (data.size() > 0) {
                 gs.str(" {");
-                for (uint i = 0; i < data.size(); i++) {
+                for (capnp::uint i = 0; i < data.size(); i++) {
                     if (i > 0) {
                         gs.chr(',');
                     }
@@ -1158,7 +1158,7 @@ void generateEnum(PodGenStream& gs, ::capnp::EnumSchema schema) {
     }
 
     gs.indent().str("enum ").token(name).str(" : uint16_t ").openBrace();
-    for (uint i = 0; i < enumerants.size(); i++) {
+    for (capnp::uint i = 0; i < enumerants.size(); i++) {
         if (ignore(enumerants[i])) continue;
 
         gs.indent().cap(enumerants[i].getProto().getName().cStr());
@@ -1189,7 +1189,7 @@ void generateEnum(PodGenStream& gs, ::capnp::EnumSchema schema) {
         gs.str("static ");
     }
     gs.str("inline const std::vector<std::string> ").token(name).str("_names ").openBrace();
-    for (uint i = 0; i < enumerants.size(); i++) {
+    for (capnp::uint i = 0; i < enumerants.size(); i++) {
         if (ignore(enumerants[i])) continue;
 
         gs.indent().chr('"').cap(enumerants[i].getProto().getName().cStr()).chr('"');
