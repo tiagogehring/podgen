@@ -1117,13 +1117,15 @@ void generateStruct(PodGenStream& gs, ::capnp::ParsedSchema schema) {
     }
 
     if (schema.asStruct().getUnionFields().size() > 0) {
-        if (schema.asStruct().getNonUnionFields().size() == 0) {
+        //if (schema.asStruct().getNonUnionFields().size() == 0) {
             generateUnion(gs, schema.asStruct());
             return;
-        } else {
+       /* }
+    else
+    {
             throw std::runtime_error(std::string("unsupported: anonymous union plus non-anonymous fields (")
                 + schema.asStruct().getShortDisplayName().cStr() + ")");
-        }
+        }*/
     }
 
     auto inherits = getInheritedFields(gs, schema.asStruct());
@@ -2128,10 +2130,12 @@ size_t generateFromSchema(PodGenStream& gs, ::capnp::ParsedSchema schema,
                 if (sgen) {
                     if (!isUnion(s.asStruct())) {
                         count += generateFromSchema(gs, s, sgen, egen);
-                    } else if (s.getProto().getNestedNodes().size() > 0) {
+                    } /*
+                    else if (s.getProto().getNestedNodes().size() > 0)
+                    {
                         throw std::runtime_error(std::string("unsupported: anonymous union with nested structs (")
                             + s.getShortDisplayName().cStr() + ")");
-                    }
+                    }*/
 
                     generateFromStruct(gs, s.asStruct(), schema, sgen, processed);
                 }
