@@ -24,7 +24,7 @@ function(CAPNP_GENERATE_POD_CPP SOURCES HEADERS)
     endforeach ()
 
     add_custom_command(OUTPUT ${${HEADERS}} ${${SOURCES}}
-            COMMAND $<TARGET_FILE:podgen> ${ARGN} -c "${CAPNP_INCLUDE_DIRECTORY}" -t "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/include" -o "${CAPNP_PODGEN_OUTPUT_DIR}"
+            COMMAND $<TARGET_FILE:podgen> ${ARGN} -c "${CAPNP_INCLUDE_DIRS}" -t "S${CMAKE_CURRENT_FUNCTION_LIST_DIR}/include" -o "${CAPNP_PODGEN_OUTPUT_DIR}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGN} $<TARGET_FILE:podgen>
             COMMENT "Generating Cap'n Proto POD sources"

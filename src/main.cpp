@@ -145,11 +145,12 @@ int main(int argc, char** argv) {
                 {
                     p = resolvePath(p, import);
                 }
+                p = fs::relative(p);
 
                 try
                 {
                     std::cout << p << std::endl;
-                    auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(p.c_str())), importPaths);
+                    auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(p.string().c_str())), importPaths);
                     auto ns = getNamespace(importSchema);
                     std::cout << "  parsed import " << import;
                     if (!ns.empty())
