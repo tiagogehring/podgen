@@ -5,7 +5,7 @@
 #include <optional>
 #include <variant>
 #include <iostream>
-#include <experimental/type_traits>
+#include <type_traits>
 
 namespace podgen {
 
@@ -35,30 +35,44 @@ using is_direct_output = decltype(std::declval<std::ostream&>().operator<<(std::
 template <typename T>
 using is_indirect_output = decltype(operator<<(std::declval<std::ostream&>(), std::declval<T>()));
 
+namespace detail
+{
+    template<class AlwaysVoid, template<class...> class Op, class... Args> struct detector
+    {
+        using value_t = std::false_type;
+    };
+
+    template<template<class...> class Op, class... Args> struct detector<std::void_t<Op<Args...>>, Op, Args...>
+    {
+        using value_t = std::true_type;
+    };
+}// namespace detail
+
+template<template<class...> class Op, class... Args> using is_detected = typename detail::detector<void, Op, Args...>::value_t;
+
+template<template<class...> class Op, class... Args> const auto is_detected_v = is_detected<Op, Args...>::value;
+
 template <typename T>
 using is_outputtable =
-    typename std::integral_constant<bool, std::experimental::is_detected<is_direct_output, T>::value ||
-                                              std::experimental::is_detected<is_indirect_output, T>::value>;
+    typename std::integral_constant<bool, is_detected<is_direct_output, T>::value ||
+                                              is_detected<is_indirect_output, T>::value>;
 
 /// container is iterable but doesn't have an output defined (excludes std::string)
 template <typename T>
 using is_container =
-    typename std::integral_constant<bool, std::experimental::is_detected<is_iterable, T>::value &&
+    typename std::integral_constant<bool, is_detected<is_iterable, T>::value &&
                                               !is_outputtable<T>::value>;
 
 /// whether an ADL function on this type requires a namespace qualifier
 template <typename T>
 using is_ambiguous_adl =
-    typename std::integral_constant<bool, std::experimental::is_detected<is_optional, T>::value ||
-                                              std::experimental::is_detected<is_variant, T>::value ||
-                                              std::experimental::is_detected<is_pair, T>::value ||
+    typename std::integral_constant<bool, is_detected<is_optional, T>::value ||
+                                              is_detected<is_variant, T>::value ||
+                                              is_detected<is_pair, T>::value ||
                                               is_container<T>::value>;
 
 template <typename T>
 using has_std_hash = decltype(std::declval<std::hash<T>>().operator()(std::declval<const T&>()));
-
-template <typename T>
-using has_hasher = decltype(std::declval<T::_Hasher>().operator()(std::declval<const T&>()));
 
 template <typename T>
 using has_hasher = decltype(std::declval<T::_Hasher>().operator()(std::declval<const T&>()));
@@ -83,7 +97,7 @@ std::optional<T> enumFromName(const std::string_view& name, const std::vector<st
 /// Universal hash function for objects with a podgen _Hasher or std::hash specialization
 template <typename T>
 std::size_t hash(const T& obj) {
-    if constexpr (std::experimental::is_detected<has_hasher, T>::value) {
+    if constexpr (is_detected<has_hasher, T>::value) {
         return typename T::_Hasher()(obj);
     } else {
         return std::hash<T>()(obj);
@@ -108,9 +122,9 @@ std::size_t hashCombine(std::size_t s, const T& obj, Args&&... args);
 /// Universal hash combine function
 template <typename T>
 std::size_t hashCombine(std::size_t s, const T& obj) {
-    if constexpr (std::experimental::is_detected<is_iterable, T>::value &&
-                  !std::experimental::is_detected<has_std_hash, T>::value &&
-                  !std::experimental::is_detected<has_hasher, T>::value) {
+    if constexpr (is_detected<is_iterable, T>::value &&
+                  !is_detected<has_std_hash, T>::value &&
+                  !is_detected<has_hasher, T>::value) {
         for (const auto& o : obj) {
             s = hashCombine(s, o);
         }

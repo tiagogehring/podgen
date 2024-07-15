@@ -177,15 +177,15 @@ std::string getNamespace(const ::capnp::Schema& schema) {
 /// Convert the capnp namespace to an appropriate pod namespace.
 /// if capnp namespace ends with "::capnp", it is stripped. Otherwise, "::pod" as added.
 std::string podFromCapnpNamespace(const std::string& ns) {
-    static const std::string capnp_ns = "::capnp";
+    /*/static const std::string capnp_ns = "::capnp";
 
     if (ns.empty()) {
         return "";
     } else if (ns.size() >= capnp_ns.size() && ns.substr(ns.size() - capnp_ns.size()) == capnp_ns) {
         return ns.substr(0, ns.size() - capnp_ns.size());
-    } else {
+    } else {*/
         return ns + "::pod";
-    }
+    //}
 }
 
 /**

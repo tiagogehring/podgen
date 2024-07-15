@@ -24,6 +24,12 @@ static fs::path canonPath(std::string_view path) {
     return fs::path{ ret };
 }
 
+static std::string pathString(std::string_view path){
+    std::string ret = path.data();
+    std::replace(ret.begin(), ret.end(), '\\', '/');
+    return ret;
+}
+
 int main(int argc, char** argv) {    
     if (argc <= 1) {
         std::cerr << "Usage: podgen [schemas...] -t template_dir -o output_dir -c capnp_root_dir" << std::endl;
@@ -35,7 +41,7 @@ int main(int argc, char** argv) {
         fs::path templateRoot;
         fs::path outputRoot;
         fs::path capnpRoot;
-        std::vector<std::string> inputs;
+        std::vector<std::string> inputs;       
 
         for (int i = 1; i < argc; i++)
         {
@@ -60,7 +66,7 @@ int main(int argc, char** argv) {
                     return -1;
                 }
                 templateRoot = canonPath(argv[i]);
-            }
+            }                         
             else
             {
                 inputs.emplace_back(argv[i]);
@@ -105,21 +111,17 @@ int main(int argc, char** argv) {
             SchemaInfo info;
 
             auto putType = [&info](PodGenStream&, ::capnp::StructSchema schema, ::capnp::Schema parent) {
+                auto name = schema.getProto().getDisplayName();
                 info.internalTypesByName.emplace(schema.getProto().getDisplayName(), schema);
                 info.internalTypesById.emplace(schema.getProto().getId(), schema);
                 info.schemaParentOf.emplace(schema.getProto().getId(), parent.getProto().getId());
             };
 
             ::capnp::SchemaParser parser;
-            info.schema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(input.c_str())), importPaths);
-            // info.schema = parser.parseFile()
+            info.schema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(pathString(input).c_str())), importPaths);            
 
-            auto namesp = getNamespace(info.schema);
-            if (!namesp.empty())
-            {
-                std::cout << "  found namespace " << namesp << std::endl;
-            }
-            info.importNamespaces.emplace(input, namesp);
+            auto namesp = getNamespace(info.schema);            
+            info.importNamespaces.emplace(pathString(input), namesp);
 
             generateFromSchema(dummy, info.schema, putType);
             auto externalTypes = findExternalTypes(info.schema);
@@ -129,6 +131,8 @@ int main(int argc, char** argv) {
 
             auto parentPath = capnpFile.parent_path();
             auto file = capnpFile.string();
+
+            
             for (auto& [alias, import] : getImportsFromCapnp(file))
             {
                 fs::path p = capnpFile.parent_path();
@@ -148,21 +152,14 @@ int main(int argc, char** argv) {
                 p = fs::relative(p);
 
                 try
-                {
-                    std::cout << p << std::endl;
-                    auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(p.string().c_str())), importPaths);
-                    auto ns = getNamespace(importSchema);
-                    std::cout << "  parsed import " << import;
-                    if (!ns.empty())
-                    {
-                        std::cout << " with namespace " << ns;
-                    }
-                    std::cout << std::endl;
+                {  
+                    auto importSchema = parser.parseFromDirectory(fs->getCurrent(), kj::Path::parse(kj::str(pathString(p.string()).c_str())), importPaths);
+                    auto ns = getNamespace(importSchema);                    
 
                     auto countTypes = generateFromSchema(dummy, importSchema, putType);
                     if (countTypes > 0)
                     {
-                        info.importNamespaces.emplace(p.string(), ns);
+                        info.importNamespaces.emplace(pathString(p.string()), ns);
 
                         // stick the import's using alias in the map with the same namespace
                         if (!alias.empty())
@@ -178,7 +175,7 @@ int main(int argc, char** argv) {
                 catch (kj::Exception& e)
                 {
                     std::cout << "ignoring import exception: " << e.getDescription().cStr() << std::endl;
-                }
+                }                
             }
 
             auto generate = [&](const fs::path& tmpl, const fs::path& dest) {
@@ -197,7 +194,7 @@ int main(int argc, char** argv) {
                     return false;
                 }
 
-                std::cout << "  generating file " << dest << std::endl;
+                std::cout << " generating " << fs::relative(dest).string() << std::endl;
                 generateFile(in, out, info, capnpFile);
                 return true;
             };

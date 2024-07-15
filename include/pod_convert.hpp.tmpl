@@ -1,6 +1,6 @@
 #pragma once
 
-#include <experimental/type_traits>
+#include <type_traits>
 #include <capnp/schema.h>
 
 {{include_pod}}
@@ -23,7 +23,7 @@ auto _fromCapnp(CT v) {
         auto bytes = v.asBytes();
         auto begin = reinterpret_cast<const podgen::Data::value_type*>(bytes.begin());
         return podgen::Data(begin, begin + bytes.size());
-    } else if constexpr (std::experimental::is_detected<podgen::is_iterable, CT>::value) {
+    } else if constexpr (podgen::is_detected<podgen::is_iterable, CT>::value) {
         using CE = decltype(std::declval<CT>().begin().operator*());
         using E = decltype(_fromCapnp(std::declval<CE>()));
         std::vector<E> out;
@@ -49,9 +49,9 @@ auto _fromCapnpList(CL list) {
             out.insert(out.end(), _fromCapnp(ce));
         } else if constexpr (std::is_same<CE, ::capnp::Data::Reader>::value) {
             out.insert(out.end(), _fromCapnp(ce));
-        } else if constexpr (std::experimental::is_detected<podgen::is_iterable, CE>::value) {
+        } else if constexpr (podgen::is_detected<podgen::is_iterable, CE>::value) {
             out.insert(out.end(), _fromCapnpList<E>(ce));
-        } else if constexpr (std::experimental::is_detected<podgen::is_pair, E>::value) {
+        } else if constexpr (podgen::is_detected<podgen::is_pair, E>::value) {
             out.insert(out.end(), std::make_pair(_fromCapnp(ce.getKey()), _fromCapnp(ce.getValue())));
         } else {
             out.insert(out.end(), _fromCapnp(ce));
@@ -87,14 +87,14 @@ void _toCapnpList(B builder, const T& container) {
         throw std::invalid_argument("capnp list builder must be initialized to source vector size");
     }
 
-    uint i = 0;
+    unsigned i = 0;
     for (const auto& e : container) {
         if constexpr (!std::is_same<void, decltype(_toCapnp(std::declval<E>()))>::value) {
             builder.set(i, _toCapnp(e));
-        } else if constexpr (std::experimental::is_detected<podgen::is_pair, E>::value) {
+        } else if constexpr (podgen::is_detected<podgen::is_pair, E>::value) {
             builder[i].setKey(_toCapnp(e.first));
             builder[i].setValue(_toCapnp(e.second));
-        } else if constexpr (std::experimental::is_detected<podgen::is_iterable, E>::value) {
+        } else if constexpr (podgen::is_detected<podgen::is_iterable, E>::value) {
             auto b = builder.init(i, e.size());
             _toCapnpList(b, e);
         } else {

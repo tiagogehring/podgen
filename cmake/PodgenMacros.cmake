@@ -18,13 +18,14 @@ function(CAPNP_GENERATE_POD_CPP SOURCES HEADERS)
 
     foreach (src ${ARGN})
         get_filename_component(filename ${src} NAME_WE)
-        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.pod.hpp")
-        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.convert.hpp")
-        list(APPEND ${SOURCES} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.convert.cpp")         
+        get_filename_component(dir ${src} DIRECTORY)
+        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.pod.hpp")
+        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.convert.hpp")
+        list(APPEND ${SOURCES} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.convert.cpp")         
     endforeach ()
 
     add_custom_command(OUTPUT ${${HEADERS}} ${${SOURCES}}
-            COMMAND $<TARGET_FILE:podgen> ${ARGN} -c "${CAPNP_INCLUDE_DIRS}" -t "S${CMAKE_CURRENT_FUNCTION_LIST_DIR}/include" -o "${CAPNP_PODGEN_OUTPUT_DIR}"
+            COMMAND $<TARGET_FILE:podgen> ${ARGN} -c "${CAPNP_INCLUDE_DIRS}" -t "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../include" -o "${CAPNP_PODGEN_OUTPUT_DIR}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             DEPENDS ${ARGN} $<TARGET_FILE:podgen>
             COMMENT "Generating Cap'n Proto POD sources"

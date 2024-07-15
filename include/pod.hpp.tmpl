@@ -89,7 +89,7 @@ void _out(std::ostream& os, const C& c) {
             os << ", ";
         }
 
-        if constexpr (std::experimental::is_detected<podgen::is_pair, decltype(o)>::value) {
+        if constexpr (podgen::is_detected<podgen::is_pair, decltype(o)>::value) {
             // special case for maps
             os << '{';
             {{namespace}}::_out_adl(os, o.first);
