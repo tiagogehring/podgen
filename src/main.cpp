@@ -99,16 +99,22 @@ int main(int argc, char** argv) {
 
             std::cout << "parsing " << capnpFile.string() << std::endl;
 
-            auto podConvertSource = outputRoot / capnpFile;
+            auto dir = outputRoot.empty() ? capnpFile.parent_path() : outputRoot;
+            
+            auto podConvertSource = dir / capnpFile.filename();
             podConvertSource.replace_extension(".convert.cpp");
 
-            auto podHeader = outputRoot / capnpToPodImport(capnpFile);
+            auto podHeader = dir / capnpToPodImport(capnpFile).filename();
             auto podInclude = podHeader.filename();
 
-            auto podConvertHeader = outputRoot / capnpToConvertImport(capnpFile);
+            auto podConvertHeader = dir / capnpToConvertImport(capnpFile).filename();
             auto podConvertInclude = podConvertHeader.filename();
 
             SchemaInfo info;
+            if (!outputRoot.empty())
+            {
+                info.podRoot = fs::relative(capnpFile.parent_path(), outputRoot).string() + "/";
+            }
 
             auto putType = [&info](PodGenStream&, ::capnp::StructSchema schema, ::capnp::Schema parent) {
                 auto name = schema.getProto().getDisplayName();

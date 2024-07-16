@@ -4,7 +4,7 @@
 #include "schema.hpp"
 
 bool isUnion(::capnp::StructSchema schema) {
-    return schema.getUnionFields().size() > 0;
+    return schema.getUnionFields().size() > 0 && schema.getNonUnionFields().size() == 0;
 }
 
 bool isOptional(::capnp::StructSchema schema) {

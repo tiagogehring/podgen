@@ -9,19 +9,15 @@ function(CAPNP_GENERATE_POD_CPP SOURCES HEADERS)
     else()
         set(output_dir ":.")
     endif()
-
-    set(CAPNPC_IMPORT_DIRS "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/include")
-    set(CAPNPC_OUTPUT_DIR "${base_dir}")
-    
+            
     set(${SOURCES})
     set(${HEADERS})
 
     foreach (src ${ARGN})
-        get_filename_component(filename ${src} NAME_WE)
-        get_filename_component(dir ${src} DIRECTORY)
-        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.pod.hpp")
-        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.convert.hpp")
-        list(APPEND ${SOURCES} "${CAPNP_PODGEN_OUTPUT_DIR}/${dir}/${filename}.convert.cpp")         
+        get_filename_component(filename ${src} NAME_WE)        
+        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.pod.hpp")
+        list(APPEND ${HEADERS} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.convert.hpp")
+        list(APPEND ${SOURCES} "${CAPNP_PODGEN_OUTPUT_DIR}/${filename}.convert.cpp")         
     endforeach ()
 
     add_custom_command(OUTPUT ${${HEADERS}} ${${SOURCES}}

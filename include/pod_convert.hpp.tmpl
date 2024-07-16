@@ -10,6 +10,8 @@
 {{namespace_start}}
 
 // from
+#ifndef CAPNP_CONVERT_COMMON_DEFINED
+#define CAPNP_CONVERT_COMMON_DEFINED
 
 template <typename CT>
 auto _fromCapnp(CT v) {
@@ -104,5 +106,7 @@ void _toCapnpList(B builder, const T& container) {
         i++;
     }
 }
+
+#endif CAPNP_CONVERT_COMMON_DEFINED
 
 {{namespace_end}}

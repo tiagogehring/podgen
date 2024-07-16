@@ -62,6 +62,7 @@ struct SchemaInfo {
     Unions unions;
     CapnpToExternalType externalTypes;
     std::unordered_set<std::string> podHeaders;
+    std::string podRoot;
 };
 
 

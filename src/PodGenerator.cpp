@@ -1117,15 +1117,15 @@ void generateStruct(PodGenStream& gs, ::capnp::ParsedSchema schema) {
     }
 
     if (schema.asStruct().getUnionFields().size() > 0) {
-        //if (schema.asStruct().getNonUnionFields().size() == 0) {
+        if (schema.asStruct().getNonUnionFields().size() == 0) {
             generateUnion(gs, schema.asStruct());
             return;
-       /* }
-    else
-    {
+        } /* 
+        else
+        {
             throw std::runtime_error(std::string("unsupported: anonymous union plus non-anonymous fields (")
                 + schema.asStruct().getShortDisplayName().cStr() + ")");
-        }*/
+        } */
     }
 
     auto inherits = getInheritedFields(gs, schema.asStruct());
@@ -1253,6 +1253,32 @@ void generatePods(PodGenStream& gs, ::capnp::ParsedSchema schema) {
     }
 
     if (wasConst) gs.nl();
+}
+
+void generateForwardDeclarations(PodGenStream& gs, ::capnp::ParsedSchema schema)
+{
+    auto nodes = schema.getProto().getNestedNodes();
+    for (::capnp::schema::Node::NestedNode::Reader n : nodes)
+    {
+        auto s = schema.getNested(n.getName());
+        if (ignore(s))
+            continue;
+
+        switch (s.getProto().which())
+        {
+        case ::capnp::schema::Node::Which::STRUCT: {
+            auto name = s.getShortDisplayName();
+
+            if (s.asStruct().getUnionFields().size() == 0 || s.asStruct().getNonUnionFields().size() > 0)
+            {
+                gs.indent().str("struct ").token(name).str(";").nl();
+            }
+            break;
+        }        
+        default:
+            break;
+        }
+    }    
 }
 
 void generateConvertFromStructFunctionLine(PodGenStream& gs, ::capnp::StructSchema schema) {
@@ -2130,12 +2156,12 @@ size_t generateFromSchema(PodGenStream& gs, ::capnp::ParsedSchema schema,
                 if (sgen) {
                     if (!isUnion(s.asStruct())) {
                         count += generateFromSchema(gs, s, sgen, egen);
-                    } /*
+                    } 
                     else if (s.getProto().getNestedNodes().size() > 0)
                     {
                         throw std::runtime_error(std::string("unsupported: anonymous union with nested structs (")
                             + s.getShortDisplayName().cStr() + ")");
-                    }*/
+                    }
 
                     generateFromStruct(gs, s.asStruct(), schema, sgen, processed);
                 }
@@ -2175,15 +2201,15 @@ void generateFile(std::istream& is, std::ostream& os, const SchemaInfo& info,
     while (std::getline(is, line)) {
         if (line == "{{include_pod}}") {
             auto header = capnpToPodImport(capnpFile);
-            gs.str("#include \"").str(header.string()).str("\"").nl();
+            gs.str("#include \"").str(header.filename().string()).str("\"").nl();
         } else if (line == "{{include_converter}}") {
             auto header = capnpToConvertImport(capnpFile);
-            gs.str("#include \"").str(header.string()).str("\"").nl();
+            gs.str("#include \"").str(header.filename().string()).str("\"").nl();
         } else if (line == "{{import_pods}}") {
             for (const auto& [import, _] : info.importNamespaces) {
                 if (import != capnpFile.string()) {
                     auto p = capnpToPodImport(import);
-                    gs.str("#include \"").str(p.string()).str("\"").nl();
+                    gs.str("#include \"").str(p.filename().string()).str("\"").nl();
                 }
             }
 
@@ -2200,18 +2226,20 @@ void generateFile(std::istream& is, std::ostream& os, const SchemaInfo& info,
         } else if (line == "{{import_converters}}") {
             auto capnpHeader = capnpFile;
             capnpHeader.replace_extension(".capnp.h");
-            gs.str("#include \"").str(capnpHeader.string()).str("\"").nl();
+            gs.str("#include \"").str(info.podRoot).str(capnpHeader.filename().string()).str("\"").nl();
 
             for (const auto& [import, _] : info.importNamespaces) {
                 if (import != capnpFile.string()) {
                     auto p = capnpToConvertImport(import);
-                    gs.str("#include \"").str(p.string()).str("\"").nl();
+                    gs.str("#include \"").str(p.filename().string()).str("\"").nl();
                 }
             }
         } else if (line == "{{namespace_start}}") {
             if (!gs.namesp.empty()) {
                 gs.startNamespace(gs.namesp);
             }
+        } else if (line == "{{forward_declarations}}") {
+            generateForwardDeclarations(gs, info.schema);
         } else if (line == "{{schema}}") {
             generatePods(gs, info.schema);
         } else if (line == "{{output}}") {
